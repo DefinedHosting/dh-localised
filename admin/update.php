@@ -204,7 +204,7 @@ class DHGitHubUpdater {
     public function postInstall( $true, $hook_extra, $result ) {
 			//error_log('post_install called on: '.$_SERVER['SERVER_NAME']."\n",3,__DIR__.'/update.txt');
 			// Get plugin information
-      //$this->initPluginData();
+      $this->initPluginData();
       // Remember if our plugin was previously activated
       $wasActivated = is_plugin_active( $this->slug );
 
@@ -212,6 +212,7 @@ class DHGitHubUpdater {
       // reponame-tagname change it to our original one:
 
 			global $wp_filesystem;
+			require_once ( ABSPATH . '/wp-admin/includes/file.php' );
 			WP_Filesystem();
 			//error_log(var_dump($wp_filesystem) ,3,__DIR__.'/update.txt');
 			$pluginFolder = WP_PLUGIN_DIR . DIRECTORY_SEPARATOR . dirname( $this->slug );
