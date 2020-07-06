@@ -212,8 +212,6 @@ class DHGitHubUpdater {
       // reponame-tagname change it to our original one:
 
 			global $wp_filesystem;
-			require_once ( ABSPATH . '/wp-admin/includes/file.php' );
-			WP_Filesystem();
 			//error_log(var_dump($wp_filesystem) ,3,__DIR__.'/update.txt');
 			$pluginFolder = WP_PLUGIN_DIR . DIRECTORY_SEPARATOR . dirname( $this->slug );
       $wp_filesystem->move( $result['destination'], $pluginFolder );
