@@ -105,7 +105,7 @@ class DHGitHubUpdater {
             return $transient;
         }
         // Get plugin & GitHub release information
-        //$this->initPluginData();
+        $this->initPluginData();
         $this->getRepoReleaseInfo();
 
         // Check the versions if we need to do an update
@@ -145,7 +145,7 @@ class DHGitHubUpdater {
         $response->last_updated = $this->githubAPIResult->published_at;
         $response->slug = $this->slug;
         $response->plugin_name  = $this->pluginData["Name"];
-				//$response->name = $this->pluginData["Name"];
+				$response->name = $this->pluginData["Name"];
         $response->version = $this->githubAPIResult->tag_name;
         $response->author = $this->pluginData["AuthorName"];
         $response->homepage = $this->pluginData["PluginURI"];
@@ -204,7 +204,7 @@ class DHGitHubUpdater {
     public function postInstall( $true, $hook_extra, $result ) {
 			//error_log('post_install called on: '.$_SERVER['SERVER_NAME']."\n",3,__DIR__.'/update.txt');
 			// Get plugin information
-      $this->initPluginData();
+      //$this->initPluginData();
       // Remember if our plugin was previously activated
       $wasActivated = is_plugin_active( $this->slug );
 
