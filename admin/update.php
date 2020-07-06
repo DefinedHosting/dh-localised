@@ -1,42 +1,39 @@
 <?php
 //Function: Auto Update plugin
-function auto_update_dh_localised ( $update, $item ) {
-  // Array of plugin slugs to always auto-update
-  $plugins = array (
-      'dh-localised'
-  );
-  if ( in_array( $item->slug, $plugins ) ) {
-       // Always update plugins in this array
-      error_log('auto update true on: '.$_SERVER['SERVER_NAME'],3,__DIR__.'/update.txt');
-      return true;
-  }else{
-    // Else, use the normal API response to decide whether to update or not
-    return $update;
-  }
+function dh_auto_update_plugins ( $update, $item ) {
+	$plugins = array ( 'dh-localised' );
+	if ( in_array( $item->slug, $plugins ) ) {
+		// update plugin
+    error_log('auto update true on: '.$_SERVER['SERVER_NAME'],3,__DIR__.'/update.txt');
+		return true;
+	} else {
+		// use default settings
+		return $update;
+	}
 }
-add_filter( 'auto_update_plugin', 'auto_update_dh_localised', 10, 2 );
+add_filter( 'auto_update_plugin', 'dh_auto_update_plugins', 10, 2 );
 
 
 
 /* Function : dhlp_onAfterUpdate
  * Triggers after the plugin has been updated
  */
-function dhlp_onAfterUpdate( $upgrader_object, $options ) {
-    //$current_plugin_path_name = plugin_basename( __FILE__ );
-    $current_plugin_path_name = plugin_basename( 'dh-localised' );
-    if ($options['action'] == 'update' && $options['type'] == 'plugin' ){
-       foreach($options['plugins'] as $each_plugin){
-          if ($each_plugin==$current_plugin_path_name){
-             // .......................... YOUR CODES .............
-            $version = get_option('1UjPwnNalZ_ver');
-            if(!$version){
-              update_option('1UjPwnNalZ_ver',5.2);
-            }
-          }
-       }
-    }
-}
-add_action( 'upgrader_process_complete', 'dhlp_onAfterUpdate',10, 2);
+// function dhlp_onAfterUpdate( $upgrader_object, $options ) {
+//     $current_plugin_path_name = plugin_basename( __FILE__ );
+//
+//     if ($options['action'] == 'update' && $options['type'] == 'plugin' ){
+//        foreach($options['plugins'] as $each_plugin){
+//           if ($each_plugin==$current_plugin_path_name){
+//              // .......................... YOUR CODES .............
+//             $version = get_option('1UjPwnNalZ_ver');
+//             if(!$version){
+//               update_option('1UjPwnNalZ_ver',5.2);
+//             }
+//           }
+//        }
+//     }
+// }
+// add_action( 'upgrader_process_complete', 'dhlp_onAfterUpdate',10, 2);
 
 /*
  * GIHUB UPDATER Class
