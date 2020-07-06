@@ -22,8 +22,8 @@ add_filter( 'auto_update_plugin', 'auto_update_dh_localised', 10, 2 );
  * Triggers after the plugin has been updated
  */
 function dhlp_onAfterUpdate( $upgrader_object, $options ) {
-    $current_plugin_path_name = plugin_basename( __FILE__ );
-
+    //$current_plugin_path_name = plugin_basename( __FILE__ );
+    $current_plugin_path_name = plugin_basename( 'dh-localised' );
     if ($options['action'] == 'update' && $options['type'] == 'plugin' ){
        foreach($options['plugins'] as $each_plugin){
           if ($each_plugin==$current_plugin_path_name){
