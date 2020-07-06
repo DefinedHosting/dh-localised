@@ -53,8 +53,6 @@ class DHGitHubUpdater {
     function __construct( $pluginFile, $gitHubUsername, $gitHubProjectName, $accessToken = '' ) {
         add_filter( "pre_set_site_transient_update_plugins", array( $this, "setTransitent" ) );
         add_filter( "plugins_api", array( $this, "setPluginInfo" ), 10, 3 );
-				add_filter( "upgrader_pre_install", array( $this, "preInstall" ), 10, 3 );
-
 	      add_filter( "upgrader_post_install", array( $this, "postInstall" ), 10, 3 );
 
         $this->pluginFile = $pluginFile;
@@ -200,15 +198,6 @@ class DHGitHubUpdater {
         return $response;
     }
 
-
-		public function preInstall( $true, $args )
-		    {
-		        // Get plugin information
-		                $this->initPluginData();
-
-		                // Check if the plugin was installed before...
-		        $this->pluginActivated = is_plugin_active( $this->slug );
-		    }
 
     // Perform additional actions to successfully install our plugin
     public function postInstall( $true, $hook_extra, $result ) {
