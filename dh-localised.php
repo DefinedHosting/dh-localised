@@ -10,6 +10,6 @@ Version: 5.1.6
 Author URI: https://www.definedhosting.co.uk
 */
 include_once('core.php');
-if ( is_admin() ) {
+//if ( is_admin() ) {
     new DHGitHubUpdater( __FILE__, 'DefinedHosting', "dh-localised" );
-}
+//}
