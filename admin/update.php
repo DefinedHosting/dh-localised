@@ -4,7 +4,7 @@ function dh_auto_update_plugins ( $update, $item ) {
 	$plugins = array ( 'dh-localised/dh-localised.php' );
 	if ( in_array($item->slug, $plugins ) ) {
 		// update plugin
-    error_log('auto update true on: '.$_SERVER['SERVER_NAME']."\n",3,__DIR__.'/update.txt');
+  //  error_log('auto update true on: '.$_SERVER['SERVER_NAME']."\n",3,__DIR__.'/update.txt');
 		return true;
 	} else {
 		// use default settings
@@ -105,7 +105,7 @@ class DHGitHubUpdater {
             return $transient;
         }
         // Get plugin & GitHub release information
-        $this->initPluginData();
+        //$this->initPluginData();
         $this->getRepoReleaseInfo();
 
         // Check the versions if we need to do an update
@@ -145,7 +145,7 @@ class DHGitHubUpdater {
         $response->last_updated = $this->githubAPIResult->published_at;
         $response->slug = $this->slug;
         $response->plugin_name  = $this->pluginData["Name"];
-				$response->name = $this->pluginData["Name"];
+				//$response->name = $this->pluginData["Name"];
         $response->version = $this->githubAPIResult->tag_name;
         $response->author = $this->pluginData["AuthorName"];
         $response->homepage = $this->pluginData["PluginURI"];
@@ -199,9 +199,10 @@ class DHGitHubUpdater {
     }
 
 
+
     // Perform additional actions to successfully install our plugin
     public function postInstall( $true, $hook_extra, $result ) {
-			error_log('post_install called on: '.$_SERVER['SERVER_NAME']."\n",3,__DIR__.'/update.txt');
+			//error_log('post_install called on: '.$_SERVER['SERVER_NAME']."\n",3,__DIR__.'/update.txt');
 			// Get plugin information
       $this->initPluginData();
       // Remember if our plugin was previously activated
