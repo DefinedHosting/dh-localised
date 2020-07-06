@@ -210,9 +210,11 @@ class DHGitHubUpdater {
 
       // Since we are hosted in GitHub, our plugin folder would have a dirname of
       // reponame-tagname change it to our original one:
-      global $wp_filesystem;
-			//WP_Filesystem();
-      $pluginFolder = WP_PLUGIN_DIR . DIRECTORY_SEPARATOR . dirname( $this->slug );
+
+			global $wp_filesystem;
+			WP_Filesystem();
+			//error_log(var_dump($wp_filesystem) ,3,__DIR__.'/update.txt');
+			$pluginFolder = WP_PLUGIN_DIR . DIRECTORY_SEPARATOR . dirname( $this->slug );
       $wp_filesystem->move( $result['destination'], $pluginFolder );
       $result['destination'] = $pluginFolder;
 
