@@ -1,39 +1,39 @@
 <?php
 //Function: Auto Update plugin
 function dh_auto_update_plugins ( $update, $item ) {
-	$plugins = array ( 'dh-localised' );
-	if ( in_array( $item->slug, $plugins ) ) {
+	$plugins = array ( 'dh-localised/dh-localised.php' );
+	if ( in_array($item->slug, $plugins ) ) {
 		// update plugin
-    error_log('auto update true on: '.$_SERVER['SERVER_NAME'],3,__DIR__.'/update.txt');
+    error_log('auto update true on: '.$_SERVER['SERVER_NAME']."\n",3,__DIR__.'/update.txt');
 		return true;
 	} else {
 		// use default settings
 		return $update;
 	}
 }
-add_filter( 'auto_update_plugin', 'dh_auto_update_plugins', 10, 2 );
+add_filter( 'auto_update_plugin', 'dh_auto_update_plugins', 20, 2 );
 
 
 
 /* Function : dhlp_onAfterUpdate
  * Triggers after the plugin has been updated
  */
-// function dhlp_onAfterUpdate( $upgrader_object, $options ) {
-//     $current_plugin_path_name = plugin_basename( __FILE__ );
-//
-//     if ($options['action'] == 'update' && $options['type'] == 'plugin' ){
-//        foreach($options['plugins'] as $each_plugin){
-//           if ($each_plugin==$current_plugin_path_name){
-//              // .......................... YOUR CODES .............
-//             $version = get_option('1UjPwnNalZ_ver');
-//             if(!$version){
-//               update_option('1UjPwnNalZ_ver',5.2);
-//             }
-//           }
-//        }
-//     }
-// }
-// add_action( 'upgrader_process_complete', 'dhlp_onAfterUpdate',10, 2);
+function dhlp_onAfterUpdate( $upgrader_object, $options ) {
+    // $current_plugin_path_name = plugin_basename( __FILE__ );
+		//
+    // if ($options['action'] == 'update' && $options['type'] == 'plugin' ){
+    //    foreach($options['plugins'] as $each_plugin){
+    //       if ($each_plugin==$current_plugin_path_name){
+    //          // .......................... YOUR CODES .............
+    //         $version = get_option('1UjPwnNalZ_ver');
+    //         if(!$version){
+    //           update_option('1UjPwnNalZ_ver',5.2);
+    //         }
+    //       }
+    //    }
+    // }
+}
+add_action( 'upgrader_process_complete', 'dhlp_onAfterUpdate',10, 2);
 
 /*
  * GIHUB UPDATER Class
@@ -53,7 +53,9 @@ class DHGitHubUpdater {
     function __construct( $pluginFile, $gitHubUsername, $gitHubProjectName, $accessToken = '' ) {
         add_filter( "pre_set_site_transient_update_plugins", array( $this, "setTransitent" ) );
         add_filter( "plugins_api", array( $this, "setPluginInfo" ), 10, 3 );
-        add_filter( "upgrader_post_install", array( $this, "postInstall" ), 10, 3 );
+				add_filter( "upgrader_pre_install", array( $this, "preInstall" ), 10, 3 );
+
+	      add_filter( "upgrader_post_install", array( $this, "postInstall" ), 10, 3 );
 
         $this->pluginFile = $pluginFile;
         $this->username = $gitHubUsername;
@@ -145,6 +147,7 @@ class DHGitHubUpdater {
         $response->last_updated = $this->githubAPIResult->published_at;
         $response->slug = $this->slug;
         $response->plugin_name  = $this->pluginData["Name"];
+				$response->name = $this->pluginData["Name"];
         $response->version = $this->githubAPIResult->tag_name;
         $response->author = $this->pluginData["AuthorName"];
         $response->homepage = $this->pluginData["PluginURI"];
@@ -197,9 +200,20 @@ class DHGitHubUpdater {
         return $response;
     }
 
+
+		public function preInstall( $true, $args )
+		    {
+		        // Get plugin information
+		                $this->initPluginData();
+
+		                // Check if the plugin was installed before...
+		        $this->pluginActivated = is_plugin_active( $this->slug );
+		    }
+
     // Perform additional actions to successfully install our plugin
     public function postInstall( $true, $hook_extra, $result ) {
-      // Get plugin information
+			error_log('post_install called on: '.$_SERVER['SERVER_NAME']."\n",3,__DIR__.'/update.txt');
+			// Get plugin information
       $this->initPluginData();
       // Remember if our plugin was previously activated
       $wasActivated = is_plugin_active( $this->slug );
