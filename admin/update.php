@@ -1,155 +1,142 @@
-<?php
-function auto_update_specific_plugins ( $update, $item ) {
-    // Array of plugin slugs to always auto-update
-    $plugins = array (
-        'dh-localised',
-    );
-		error_log($item->slug."\n",3,__DIR__.'/update.txt');
-    if ( in_array( $item->slug, $plugins ) ) {
-         // Always update plugins in this array
-				error_log('Auto update returns true for '.$item->slug."\n",3,__DIR__.'/update.txt');
-        return true;
-    } else {
-        // Else, use the normal API response to decide whether to update or not
-        return $update;
-    }
-}
-add_filter( 'auto_update_plugin', 'auto_update_specific_plugins', 20, 2 );
-
-// function auto_update_specific_plugin_check($update, $item){
-//
-// }
-// add_filter( 'auto_update_plugin', 'auto_update_specific_plugin_check', 25, 2 );
-
-
-class Smashing_Updater {
-	// Plugin Data
-	protected $file;
-  protected $plugin;
-  protected $basename;
-  protected $active;
-
-	// GitHub Data
-	private $username;
-	private $repository;
-	private $authorize_token;
-	private $github_response;
-
-	public function set_username( $username ) {
-	  $this->username = $username;
-	}
-	public function set_repository( $repository ) {
-	  $this->repository = $repository;
-	}
-	public function authorize( $token ) {
-	  $this->authorize_token = $token;
-	}
-
-	public function set_plugin_properties() {
-		$this->plugin   = get_plugin_data( $this->file );
-		$this->basename = plugin_basename( $this->file );
-		$this->active   = is_plugin_active( $this->basename );
-	}
-
-  public function __construct( $file ) {
-    $this->file = $file;
-    add_action( 'admin_init', array( $this, 'set_plugin_properties' ) );
-    return $this;
-  }
-
-	public function initialize() {
-		add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'modify_transient' ), 10, 1 );
-		add_filter( 'plugins_api', array( $this, 'plugin_popup' ), 10, 3);
-		add_filter( 'upgrader_post_install', array( $this, 'after_install' ), 10, 3 );
-	}
-
-	private function get_repository_info() {
-	  if ( is_null( $this->github_response ) ) { // Do we have a response?
-	    $request_uri = sprintf( 'https://api.github.com/repos/%s/%s/releases', $this->username, $this->repository ); // Build URI
-	    if( $this->authorize_token ) { // Is there an access token?
-	        $request_uri = add_query_arg( 'access_token', $this->authorize_token, $request_uri ); // Append it
-	    }
-	    $response = json_decode( wp_remote_retrieve_body( wp_remote_get( $request_uri ) ), true ); // Get JSON and parse it
-	    if( is_array( $response ) ) { // If it is an array
-	        $response = current( $response ); // Get the first item
-	    }
-	    if( $this->authorize_token ) { // Is there an access token?
-	        $response['zipball_url'] = add_query_arg( 'access_token', $this->authorize_token, $response['zipball_url'] ); // Update our zip url with token
-	    }
-	    $this->github_response = $response; // Set it to our property
-	  }
-	}
-
-
-	public function modify_transient( $transient ) {
-	  if( property_exists( $transient, 'checked') ) { // Check if transient has a checked property
-	    if( $checked = $transient->checked ) { // Did WordPress check for updates?
-	      $this->get_repository_info(); // Get the repo info
-	      $out_of_date = version_compare( $this->github_response['tag_name'], $checked[$this->basename], 'gt' ); // Check if we're out of date
-	      if( $out_of_date ) {
-	        $new_files = $this->github_response['zipball_url']; // Get the ZIP
-	        $slug = current( explode('/', $this->basename ) ); // Create valid slug
-	        $plugin = array( // setup our plugin info
-	          'url' => $this->plugin["PluginURI"],
-	          'slug' => $slug,
-	          'package' => $new_files,
-	          'new_version' => $this->github_response['tag_name']
-	        );
-	        $transient->response[ $this->basename ] = (object) $plugin; // Return it in response
-	      }
-	    }
-	  }
-	  return $transient; // Return filtered transient
-	}
-
-
-	public function plugin_popup( $result, $action, $args ) {
-	  if( ! empty( $args->slug ) ) { // If there is a slug
-	    if( $args->slug == current( explode( '/' , $this->basename ) ) ) { // And it's our slug
-	      $this->get_repository_info(); // Get our repo info
-	      // Set it to an array
-	      $plugin = array(
-	        'name'              => $this->plugin["Name"],
-	        'slug'              => $this->basename,
-	        'version'           => $this->github_response['tag_name'],
-	        'author'            => $this->plugin["AuthorName"],
-	        'author_profile'    => $this->plugin["AuthorURI"],
-	        'last_updated'      => $this->github_response['published_at'],
-	        'homepage'          => $this->plugin["PluginURI"],
-	        'short_description' => $this->plugin["Description"],
-	        'sections'          => array(
-	            'Description'   => $this->plugin["Description"],
-	            'Updates'       => $this->github_response['body'],
-	        ),
-	        'download_link'     => $this->github_response['zipball_url']
-	      );
-	      return (object) $plugin; // Return the data
-	    }
-	  }
-	  return $result; // Otherwise return default
-	}
-
-
-	public function after_install( $response, $hook_extra, $result ) {
-		$creds = request_filesystem_credentials(site_url() . '/wp-admin/', '', false, false, array());
-		if ( ! WP_Filesystem($creds) ) {
-			request_filesystem_credentials($url, '', true, false, null);
-			return;
-		}
-		global $wp_filesystem; // Get global FS object
-		error_log(print_r($wp_filesystem)."\n",3,__DIR__.'/update.txt');
-	  $install_directory = plugin_dir_path( $this->file ); // Our plugin directory
-		error_log('install directory: '.$install_directory."\n",3,__DIR__.'/update.txt');
-		error_log('destination: '.$result['destination']."\n",3,__DIR__.'/update.txt');
-	  $wp_filesystem->move( $result['destination'], $install_directory ); // Move files to the plugin dir
-	  $result['destination'] = $install_directory; // Set the destination for the rest of the stack
-
-	  if ( $this->active ) { // If it was active
-	    activate_plugin( $this->basename ); // Reactivate
-	  }
-	  return $result;
-	}
-
-
-
-}
+<?php //004fb
+if(!extension_loaded('ionCube Loader')){$__oc=strtolower(substr(php_uname(),0,3));$__ln='ioncube_loader_'.$__oc.'_'.substr(phpversion(),0,3).(($__oc=='win')?'.dll':'.so');if(function_exists('dl')){@dl($__ln);}if(function_exists('_il_exec')){return _il_exec();}$__ln='/ioncube/'.$__ln;$__oid=$__id=realpath(ini_get('extension_dir'));$__here=dirname(__FILE__);if(strlen($__id)>1&&$__id[1]==':'){$__id=str_replace('\\','/',substr($__id,2));$__here=str_replace('\\','/',substr($__here,2));}$__rd=str_repeat('/..',substr_count($__id,'/')).$__here.'/';$__i=strlen($__rd);while($__i--){if($__rd[$__i]=='/'){$__lp=substr($__rd,0,$__i).$__ln;if(file_exists($__oid.$__lp)){$__ln=$__lp;break;}}}if(function_exists('dl')){@dl($__ln);}}else{die('The file '.__FILE__." is corrupted.\n");}if(function_exists('_il_exec')){return _il_exec();}echo("Site error: the ".(php_sapi_name()=='cli'?'ionCube':'<a href="http://www.ioncube.com">ionCube</a>')." PHP Loader needs to be installed. This is a widely used PHP extension for running ionCube protected PHP code, website security and malware blocking.\n\nPlease visit ".(php_sapi_name()=='cli'?'get-loader.ioncube.com':'<a href="http://get-loader.ioncube.com">get-loader.ioncube.com</a>')." for install assistance.\n\n");exit(199);
+?>
+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
