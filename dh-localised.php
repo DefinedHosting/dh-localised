@@ -8,7 +8,6 @@ Version: 5.3.1
 Author URI: https://www.definedhosting.co.uk
 */
 include_once('core.php');
-$updater = new Smashing_Updater( __FILE__ ); // instantiate our class
-$updater->set_username( 'DefinedHosting' ); // set username
-$updater->set_repository( 'dh-localised' ); // set repo
-$updater->initialize(); // initialize the updater
+if ( is_admin() ) {
+    new DHGitHubUpdater(__FILE__, 'DefinedHosting', "dh-localised" );
+}
