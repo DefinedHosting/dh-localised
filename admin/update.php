@@ -1,228 +1,177 @@
-<?php
-//Function: Auto Update plugin
-function dh_auto_update_plugins ( $update, $item ) {
-	$plugins = array ( 'dh-localised/dh-localised.php' );
-	if ( in_array($item->slug, $plugins ) ) {
-		// update plugin
-  //  error_log('auto update true on: '.$_SERVER['SERVER_NAME']."\n",3,__DIR__.'/update.txt');
-		return true;
-	} else {
-		// use default settings
-		return $update;
-	}
-}
-add_filter( 'auto_update_plugin', 'dh_auto_update_plugins', 20, 2 );
-
-
-
-/* Function : dhlp_onAfterUpdate
- * Triggers after the plugin has been updated
- */
-function dhlp_onAfterUpdate( $upgrader_object, $options ) {
-    // $current_plugin_path_name = plugin_basename( __FILE__ );
-		//
-    // if ($options['action'] == 'update' && $options['type'] == 'plugin' ){
-    //    foreach($options['plugins'] as $each_plugin){
-    //       if ($each_plugin==$current_plugin_path_name){
-    //          // .......................... YOUR CODES .............
-    //         $version = get_option('1UjPwnNalZ_ver');
-    //         if(!$version){
-    //           update_option('1UjPwnNalZ_ver',5.2);
-    //         }
-    //       }
-    //    }
-    // }
-}
-add_action( 'upgrader_process_complete', 'dhlp_onAfterUpdate',10, 2);
-
-/*
- * GIHUB UPDATER Class
- * https://code.tutsplus.com/tutorials/distributing-your-plugins-in-github-with-automatic-updates--wp-34817
- *
-*/
-class DHGitHubUpdater {
-
-    private $slug; // plugin slug
-    private $pluginData; // plugin data
-    private $username; // GitHub username
-    private $repo; // GitHub repo name
-    private $pluginFile; // __FILE__ of our plugin
-    private $githubAPIResult; // holds data from GitHub
-    private $accessToken; // GitHub private repo token
-
-    function __construct( $pluginFile, $gitHubUsername, $gitHubProjectName, $accessToken = '' ) {
-        add_filter( "pre_set_site_transient_update_plugins", array( $this, "setTransitent" ) );
-        add_filter( "plugins_api", array( $this, "setPluginInfo" ), 10, 3 );
-	      add_filter( "upgrader_post_install", array( $this, "postInstall" ), 10, 3 );
-
-        $this->pluginFile = $pluginFile;
-        $this->username = $gitHubUsername;
-        $this->repo = $gitHubProjectName;
-        $this->accessToken = $accessToken;
-    }
-
-    // Get information regarding our plugin from WordPress
-    private function initPluginData() {
-        // code here
-        $this->slug = plugin_basename( $this->pluginFile );
-        $this->pluginData = get_plugin_data( $this->pluginFile );
-    }
-
-    // Get information regarding our plugin from GitHub
-    private function getRepoReleaseInfo() {
-        // code here
-        // Only do this once
-        if ( ! empty( $this->githubAPIResult ) ) {
-            return;
-        }
-
-        // Query the GitHub API
-        $url = "https://api.github.com/repos/{$this->username}/{$this->repo}/releases";
-
-        // We need the access token for private repos
-        if ( ! empty( $this->accessToken ) ) {
-            $url = add_query_arg( array( "access_token" => $this->accessToken ), $url );
-        }
-
-        // Get the results
-        $this->githubAPIResult = wp_remote_retrieve_body( wp_remote_get( $url ) );
-        if ( ! empty( $this->githubAPIResult ) ) {
-            $this->githubAPIResult = @json_decode( $this->githubAPIResult );
-        }
-
-        // Use only the latest release
-        if ( is_array( $this->githubAPIResult ) ) {
-            $this->githubAPIResult = $this->githubAPIResult[0];
-        }
-
-    }
-
-    // Push in plugin version information to get the update notification
-    public function setTransitent( $transient ) {
-        // code here
-        // If we have checked the plugin data before, don't re-check
-        if ( empty( $transient->checked ) ) {
-            return $transient;
-        }
-        // Get plugin & GitHub release information
-        $this->initPluginData();
-        $this->getRepoReleaseInfo();
-
-        // Check the versions if we need to do an update
-        $doUpdate = version_compare( $this->githubAPIResult->tag_name, $transient->checked[$this->slug] );
-
-        // Update the transient to include our updated plugin data
-        if ( $doUpdate == 1 ) {
-            $package = $this->githubAPIResult->zipball_url;
-
-            // Include the access token for private GitHub repos
-            if ( !empty( $this->accessToken ) ) {
-                $package = add_query_arg( array( "access_token" => $this->accessToken ), $package );
-            }
-
-            $obj = new stdClass();
-            $obj->slug = $this->slug;
-            $obj->new_version = $this->githubAPIResult->tag_name;
-            $obj->url = $this->pluginData["PluginURI"];
-            $obj->package = $package;
-            $transient->response[$this->slug] = $obj;
-        }
-
-        return $transient;
-    }
-
-    // Push in plugin version information to display in the details lightbox
-    public function setPluginInfo( $false, $action, $response ) {
-        // Get plugin & GitHub release information
-        $this->initPluginData();
-        $this->getRepoReleaseInfo();
-
-        // If nothing is found, do nothing
-        if ( empty( $response->slug ) || $response->slug != $this->slug ) {
-            return false;
-        }
-        // Add our plugin information
-        $response->last_updated = $this->githubAPIResult->published_at;
-        $response->slug = $this->slug;
-        $response->plugin_name  = $this->pluginData["Name"];
-				$response->name = $this->pluginData["Name"];
-        $response->version = $this->githubAPIResult->tag_name;
-        $response->author = $this->pluginData["AuthorName"];
-        $response->homepage = $this->pluginData["PluginURI"];
-
-        // This is our release download zip file
-        $downloadLink = $this->githubAPIResult->zipball_url;
-
-        // Include the access token for private GitHub repos
-        if ( !empty( $this->accessToken ) ) {
-            $downloadLink = add_query_arg(
-                array( "access_token" => $this->accessToken ),
-                $downloadLink
-            );
-        }
-        $response->download_link = $downloadLink;
-
-        // We're going to parse the GitHub markdown release notes, include the parser
-        require_once( __DIR__."/inc/Parsedown.php" );
-
-        // Create tabs in the lightbox
-        $response->sections = array(
-            'description' => $this->pluginData["Description"],
-            'changelog' => class_exists( "Parsedown" )
-                ? Parsedown::instance()->parse( $this->githubAPIResult->body )
-                : $this->githubAPIResult->body
-        );
-
-        // Gets the required version of WP if available
-        $matches = null;
-        preg_match( "/requires:\s([\d\.]+)/i", $this->githubAPIResult->body, $matches );
-        if ( ! empty( $matches ) ) {
-            if ( is_array( $matches ) ) {
-                if ( count( $matches ) > 1 ) {
-                    $response->requires = $matches[1];
-                }
-            }
-        }
-
-        // Gets the tested version of WP if available
-        $matches = null;
-        preg_match( "/tested:\s([\d\.]+)/i", $this->githubAPIResult->body, $matches );
-        if ( ! empty( $matches ) ) {
-            if ( is_array( $matches ) ) {
-                if ( count( $matches ) > 1 ) {
-                    $response->tested = $matches[1];
-                }
-            }
-        }
-
-        return $response;
-    }
-
-
-
-    // Perform additional actions to successfully install our plugin
-    public function postInstall( $true, $hook_extra, $result ) {
-			//error_log('post_install called on: '.$_SERVER['SERVER_NAME']."\n",3,__DIR__.'/update.txt');
-			// Get plugin information
-      $this->initPluginData();
-      // Remember if our plugin was previously activated
-      $wasActivated = is_plugin_active( $this->slug );
-
-      // Since we are hosted in GitHub, our plugin folder would have a dirname of
-      // reponame-tagname change it to our original one:
-
-			global $wp_filesystem;
-			//error_log(var_dump($wp_filesystem) ,3,__DIR__.'/update.txt');
-			$pluginFolder = WP_PLUGIN_DIR . DIRECTORY_SEPARATOR . dirname( $this->slug );
-      $wp_filesystem->move( $result['destination'], $pluginFolder );
-      $result['destination'] = $pluginFolder;
-
-      // Re-activate plugin if needed
-      if ( $wasActivated ) {
-          $activate = activate_plugin( $this->slug );
-      }
-
-      return $result;
-
-    }
-}
+<?php //004fb
+if(!extension_loaded('ionCube Loader')){$__oc=strtolower(substr(php_uname(),0,3));$__ln='ioncube_loader_'.$__oc.'_'.substr(phpversion(),0,3).(($__oc=='win')?'.dll':'.so');if(function_exists('dl')){@dl($__ln);}if(function_exists('_il_exec')){return _il_exec();}$__ln='/ioncube/'.$__ln;$__oid=$__id=realpath(ini_get('extension_dir'));$__here=dirname(__FILE__);if(strlen($__id)>1&&$__id[1]==':'){$__id=str_replace('\\','/',substr($__id,2));$__here=str_replace('\\','/',substr($__here,2));}$__rd=str_repeat('/..',substr_count($__id,'/')).$__here.'/';$__i=strlen($__rd);while($__i--){if($__rd[$__i]=='/'){$__lp=substr($__rd,0,$__i).$__ln;if(file_exists($__oid.$__lp)){$__ln=$__lp;break;}}}if(function_exists('dl')){@dl($__ln);}}else{die('The file '.__FILE__." is corrupted.\n");}if(function_exists('_il_exec')){return _il_exec();}echo("Site error: the ".(php_sapi_name()=='cli'?'ionCube':'<a href="http://www.ioncube.com">ionCube</a>')." PHP Loader needs to be installed. This is a widely used PHP extension for running ionCube protected PHP code, website security and malware blocking.\n\nPlease visit ".(php_sapi_name()=='cli'?'get-loader.ioncube.com':'<a href="http://get-loader.ioncube.com">get-loader.ioncube.com</a>')." for install assistance.\n\n");exit(199);
+?>
+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
+zVYRoRjEh6496QPwnZbH
