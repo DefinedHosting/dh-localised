@@ -1,3 +1,4 @@
 # dh-localised
 
-~Current Version:5.1.6~
+## Bug Fixes:
+- Fixed Remove Slug from Landing Page Holders error
