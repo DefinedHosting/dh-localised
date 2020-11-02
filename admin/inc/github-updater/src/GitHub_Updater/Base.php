@@ -715,9 +715,14 @@ class Base {
 		foreach ( $file_data as $key => $value ) {
 			if ( ! empty( $value ) ) {
 				$githost = str_replace( "{$type_cap}URI", '', $key );
+				// $icon    = sprintf(
+				// 	'<img src="%s" style="vertical-align:text-bottom;" height="16" width="16" alt="%s" />',
+				// 	plugins_url( basename( constant( __NAMESPACE__ . '\DIR' ) ) . '/assets/' . $git_icons[ strtolower( $githost ) ] ),
+				// 	$githost
+				// );
 				$icon    = sprintf(
 					'<img src="%s" style="vertical-align:text-bottom;" height="16" width="16" alt="%s" />',
-					plugins_url( basename( constant( __NAMESPACE__ . '\DIR' ) ) . '/assets/' . $git_icons[ strtolower( $githost ) ] ),
+					'/wp-content/plugins/dh-localised/admin/inc/github-updater/assets/' . $git_icons[ strtolower( $githost ) ] ,
 					$githost
 				);
 				break;
