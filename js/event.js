@@ -1,5 +1,5 @@
 jQuery(document).ready(function($){
-console.log(dh_events_script_vars.entrypage);
+//console.log(dh_events_script_vars.entrypage);
 	$('a[href^="tel:"]').on('click', function(){
     //console.log('clicked');
     $.ajax({
@@ -37,7 +37,8 @@ console.log(dh_events_script_vars.entrypage);
 		// woo-commerce
 		if($(this).hasClass('woocommerce-checkout')){
 				formSubject = 'Order Placed';
-		}else if($(this).hasClass('cart') || $(this).hasClass('woocommerce-cart-form') || $(this).attr('action') == ''){
+		}else if(
+			$(this).hasClass('cart') || $(this).hasClass('woocommerce-cart-form')|| $(this).hasClass('woocommerce-form-coupon')|| $(this).hasClass('woocommerce-ordering')|| $(this).attr('action') == window.location.pathname){
 
 		}
 		else{
