@@ -3,7 +3,7 @@ jQuery(document).ready(function($){
 	if(listClass == 'landing_page'){
 		var topID = $('tr.level-0').first().attr('ID').replace('post-','');
 		$('#posts-filter').after('<style>.btn-flush{margin-top:5px; float:right; margin-left:10px;}.btn-flush:hover{cursor:pointer;}</style>');
-		$('#posts-filter').before('<button class="" data-dh-flush-all data-first-holder-id="'+topID+'">Flush All Top Holder</button>');
+		$('#posts-filter').before('<button class="" style="margin-top:8px" data-dh-flush-all data-first-holder-id="'+topID+'">Flush All Top Holder</button>');
 		$('#posts-filter').before('<pre id="dh-flush-output-modal" style="display:none; position: absolute;top: -15px;left: -25px;width: 110%;height: 100%;background: rgba(0,0,0,0.6);"><textarea id="dh-flush-output" style="top: 38%;left: 38%;display: block;width: 25%;height: 25%; vertical-align:bottom;background: #fff;position: fixed;box-shadow: 0 0 10px rgba(0, 0, 0, 0.8);border-radius: 5px; padding:10px"></textarea></pre>');
 	}
 
