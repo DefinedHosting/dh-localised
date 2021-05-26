@@ -38,8 +38,13 @@ jQuery(document).ready(function($){
 		if($(this).hasClass('woocommerce-checkout')){
 				formSubject = 'Order Placed';
 		}else if(
-			$(this).hasClass('cart') || $(this).hasClass('woocommerce-cart-form')|| $(this).hasClass('woocommerce-form-coupon')|| $(this).hasClass('woocommerce-ordering')|| $(this).attr('action') == window.location.pathname){
-
+			   $(this).hasClass('cart')
+			|| $(this).hasClass('woocommerce-cart-form')
+			|| $(this).hasClass('woocommerce-form-coupon')
+			|| $(this).hasClass('woocommerce-ordering')
+			|| $(this).attr('action') == window.location.pathname){
+					// do nothing
+					return;
 		}
 		else{
 			var subjectField = $('*.subject-field');
@@ -54,7 +59,6 @@ jQuery(document).ready(function($){
 				formSubject = $(this).find('select').first().val();
 			}
 		}
-
     $.ajax({
       url : dh_events_script_vars.ajaxurl,
       type : 'post',
