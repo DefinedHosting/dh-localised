@@ -11,7 +11,8 @@ jQuery(document).ready(function($){
           url : window.location.pathname,
           subject: $(this).attr('href').replace('tel:',''),
           type: 'Phone Call',
-					entrypage:dh_events_script_vars.entrypage
+					entrypage:dh_events_script_vars.entrypage,
+					email:dh_events_script_vars.email
         }
 	    });
   });
@@ -26,7 +27,8 @@ jQuery(document).ready(function($){
           url : window.location.pathname,
           subject: 'Email link clicked',
           type: 'Email',
-					entrypage:dh_events_script_vars.entrypage
+					entrypage:dh_events_script_vars.entrypage,
+					email:dh_events_script_vars.email
         }
 	   });
   });
@@ -35,7 +37,7 @@ jQuery(document).ready(function($){
 		var formSubject = '';
 
 		// woo-commerce
-		if($(this).hasClass('woocommerce-checkout')){
+		if($(this).hasClass('woocommerce-checkout') || $(this).attr('id') == 'sn_checkout_form'){
 				formSubject = 'Order Placed';
 		}else if(
 			   $(this).hasClass('cart')
@@ -68,7 +70,8 @@ jQuery(document).ready(function($){
           url : window.location.pathname,
           subject: formSubject,
           type: 'Form Submission',
-					entrypage:dh_events_script_vars.entrypage
+					entrypage:dh_events_script_vars.entrypage,
+					email:dh_events_script_vars.email
         }
 	   });
 		 //console.log('maybe not here');
